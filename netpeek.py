@@ -1,5 +1,7 @@
 import socket
 import subprocess
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 def get_local_ip():
 	hostname = socket.gethostname()
@@ -32,16 +34,25 @@ def ping_device(address):
 	return result.returncode == 0
 
 def scan_network(addresses):
-	online_devices = []
-	for address in addresses:
-		print(f"Scanning {address}...")
-		if ping_device(address):
-			online_devices.append(address)
-	return online_devices
+    online_devices = []
+
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        results = executor.map(ping_device, addresses)
+
+        for address, is_online in zip(addresses, results):
+            if is_online:
+                online_devices.append(address)
+
+    return online_devices
+
+start_time = time.perf_counter()
 		
 
 online_devices = scan_network(addresses)
 print(online_devices)
 
+end_time = time.perf_counter()
+
+print(f"Start Time: {start_time} End Time:{end_time}")
 
 
